@@ -25,8 +25,8 @@ void safety_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
 
   // exit controls on brake press
   if ((to_push->RIR>>21) == 0x17C) {
-    // bit 32 or 53
-    if (to_push->RDHR & 0x200001) {
+    // bit 53
+    if (to_push->RDHR & 0x200000) {
       controls_allowed = 0;
     }
   }
