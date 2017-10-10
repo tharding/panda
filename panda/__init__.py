@@ -4,12 +4,17 @@ import binascii
 import struct
 import hashlib
 import socket
-import usb1
+try:
+  import usb1
+  LIBUSB_EXISTS = True 
+except ImportError:
+  LIBUSB_EXISTS = False
 import os
 import time
 import traceback
-from dfu import PandaDFU
-from esptool import ESPROM, CesantaFlasher
+if LIBUSB_EXISTS:
+  from dfu import PandaDFU
+  from esptool import ESPROM, CesantaFlasher
 from flash_release import flash_release
 from update import ensure_st_up_to_date
 
@@ -110,8 +115,12 @@ class Panda(object):
   GMLAN_CAN2 = 1
   GMLAN_CAN3 = 2
 
-  REQUEST_IN = usb1.ENDPOINT_IN | usb1.TYPE_VENDOR | usb1.RECIPIENT_DEVICE
-  REQUEST_OUT = usb1.ENDPOINT_OUT | usb1.TYPE_VENDOR | usb1.RECIPIENT_DEVICE
+  if LIBUSB_EXISTS:
+    REQUEST_IN = usb1.ENDPOINT_IN | usb1.TYPE_VENDOR | usb1.RECIPIENT_DEVICE
+    REQUEST_OUT = usb1.ENDPOINT_OUT | usb1.TYPE_VENDOR | usb1.RECIPIENT_DEVICE
+  else:
+    REQUEST_IN = 192
+    REQUEST_OUT = 64
 
   def __init__(self, serial=None, claim=True):
     self._serial = serial
@@ -126,11 +135,14 @@ class Panda(object):
     if self._handle != None:
       self.close()
 
+    if not LIBUSB_EXISTS and self._serial is None:
+      self._serial = "WIFI"
+
     if self._serial == "WIFI":
       self._handle = WifiHandle()
       print("opening WIFI device")
       self.wifi = True
-    else:
+    elif LIBUSB_EXISTS:
       context = usb1.USBContext()
       self._handle = None
       self.wifi = False
